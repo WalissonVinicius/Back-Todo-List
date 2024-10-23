@@ -1,36 +1,36 @@
 import { Injectable } from '@nestjs/common';
-import { Task } from './task.interface';
+import { PrismaService } from '../prisma/prisma.service';
+import { Task } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
-  private tasks: Task[] = [];
-  private idCounter = 1;
+  constructor(private prisma: PrismaService) {}
 
-  findAll(): Task[] {
-    return this.tasks;
+  async findAll(): Promise<Task[]> {
+    return this.prisma.task.findMany();
   }
 
-  create(task: Omit<Task, 'id'>): Task {
-    const newTask = { id: this.idCounter++, ...task };
-    this.tasks.push(newTask);
-    return newTask;
+  async create(data: { title: string; about: string }): Promise<Task> {
+    return this.prisma.task.create({
+      data,
+    });
   }
 
-  update(id: number, updatedTask: Omit<Task, 'id'>): Task {
-    const taskIndex = this.tasks.findIndex(t => t.id === id);
-    if (taskIndex !== -1) {
-      this.tasks[taskIndex] = { id, ...updatedTask };
-      return this.tasks[taskIndex];
-    }
-    return null;
+  async update(id: number, data: { title: string; about: string }): Promise<Task> {
+    return this.prisma.task.update({
+      where: { id },
+      data,
+    });
   }
 
-  delete(id: number): boolean {
-    const taskIndex = this.tasks.findIndex(t => t.id === id);
-    if (taskIndex !== -1) {
-      this.tasks.splice(taskIndex, 1);
+  async delete(id: number): Promise<boolean> {
+    try {
+      await this.prisma.task.delete({
+        where: { id },
+      });
       return true;
+    } catch {
+      return false;
     }
-    return false;
   }
 }
